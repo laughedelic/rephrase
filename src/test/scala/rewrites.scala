@@ -24,14 +24,13 @@ class RewriteTest extends org.scalatest.FunSuite {
     assert{ rewrite(Not(Not(neg4))) == boo }
   }
 
-  // test("rewriting if-then-else") {
-  //   import ohnosequences.rules._
-  //
-  //   val c = BoolVar('c)
-  //   val t = IntVar('t)
-  //   val f = IntVar('f)
-  //
-  //   val ite = IntIte(Not(c), t, f)
-  //   assert{ rewrite(ite) == IntIte(c, f, t) }
-  // }
+  test("rewriting if-then-else") {
+
+    val c = BoolVar('c)
+    val t = IntVar('t)
+    val f = IntVar('f)
+
+    val ite = IntIte(Not(c), t, f)
+    assert{ rewrite(ite) == IntIte(c, f, t) }
+  }
 }

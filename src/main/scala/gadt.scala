@@ -35,16 +35,16 @@ import rewrites._
 case object exprRewrites extends AnyRewriteStrategy {
   import expr._
 
-  implicit def doubleNegation[E <: BoolExpr, Rec <: RewriteOf[E]](implicit rec: Rec):
-      RewriteRule[Not[Not[E]], Rec#OutExpr] =
-  new RewriteRule[Not[Not[E]], Rec#OutExpr]( expr => rec(expr.inside.inside) )
+  implicit def doubleNegation[E <: BoolExpr, R <: RewriteOf[E]](implicit r: R):
+      RewriteRule[Not[Not[E]], E, R] =
+  new RewriteRule[Not[Not[E]], E, R](r)( expr => expr.inside.inside )
 
-  // implicit def switchCondition[
-  //   C <: BoolExpr, T <: IntExpr, E <: IntExpr,
-  //   Rec <: RewriteOf[IntIte[C, E, T]]
-  // ](implicit rec: Rec):
-  //     RewriteRule[IntIte[Not[C], T, E], Rec#OutExpr] =
-  // new RewriteRule[IntIte[Not[C], T, E], Rec#OutExpr](
-  //   expr => rec(IntIte(expr.cond.inside, expr.elseExpr, expr.thenExpr))
-  // )
+  implicit def switchCondition[
+    C <: BoolExpr, T <: IntExpr, E <: IntExpr,
+    Rec <: RewriteOf[IntIte[C, E, T]]
+  ](implicit rec: Rec):
+      RewriteRule[IntIte[Not[C], T, E], IntIte[C, E, T], Rec] =
+  new RewriteRule[IntIte[Not[C], T, E], IntIte[C, E, T], Rec](rec)(
+    expr => IntIte(expr.cond.inside, expr.elseExpr, expr.thenExpr)
+  )
 }

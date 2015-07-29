@@ -15,12 +15,17 @@ case object rewrites {
   abstract class Rewrite[IE <: Expr, OE <: SameAs[IE]] extends RewriteOf[IE] { type OutExpr = OE }
 
   // One rewrite rule defines one step of rewriting
-  class RewriteRule[IE <: Expr, OE <: SameAs[IE]](rule: IE => OE) extends Rewrite[IE, OE] {
+  trait RewriteRuleFor[IE <: Expr] extends RewriteOf[IE]
 
-     def apply(expr: InExpr): OutExpr = rule(expr)
+  class RewriteRule[IE <: Expr, ME <: SameAs[IE], Rec <: RewriteOf[ME]](rec: Rec)(rule: IE => ME) extends RewriteRuleFor[IE] {
+    type OutExpr = Rec#OutExpr
+
+    def apply(expr: InExpr): OutExpr = rec(rule(expr))
   }
 
-  case class IdRule[E <: Expr]() extends RewriteRule[E, E](identity[E])
+  case class IdRule[E <: Expr]() extends Rewrite[E, E]{
+    def apply(expr: InExpr): OutExpr = expr
+  }
 
 
   // Rewrite strategy is just a set of rewrite rules prioritised by the traits hierarchy
@@ -32,6 +37,6 @@ case object rewrites {
 
   // This method looks for an implicit rewriting strategy and applies it
   def rewrite[IE <: Expr, ME <: SameAs[IE]](e: IE)
-    (implicit rule: RewriteRule[IE, ME], rec: RewriteOf[ME]): rec.OutExpr = rec(rule(e))
+    (implicit rule: RewriteRuleFor[IE] { type OutExpr = ME }, rec: RewriteOf[ME]): rec.OutExpr = rec(rule(e))
 
 }
