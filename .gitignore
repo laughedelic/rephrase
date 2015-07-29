@@ -20,3 +20,4 @@ data/in/
 data/out/
 
 .tags*
+.ensime*

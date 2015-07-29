@@ -1,12 +1,8 @@
 package ohnosequences
 
 case object rewrites {
-  // We could make all this a trait and parametrise by some generic type instead of Expr,
-  // but let's keep it simple
-  import gadt._
+  import expr._
 
-  // It's a good practice in general to separate type members and type parameters
-  // That's why we have here two traits: AnyRewrite and Rewrite
   trait AnyRewrite {
 
     type InExpr <: Expr
@@ -15,46 +11,27 @@ case object rewrites {
     def apply(expr: InExpr): OutExpr
   }
 
+  abstract class RewriteOf[IE <: Expr] extends AnyRewrite { type InExpr = IE }
+  abstract class Rewrite[IE <: Expr, OE <: SameAs[IE]] extends RewriteOf[IE] { type OutExpr = OE }
 
-  // One rewrite rule define one step of rewriting
-  trait AnyRewriteRule extends AnyRewrite
-  trait RewriteRuleFor[IE <: Expr] extends AnyRewriteRule { type InExpr = IE }
-  trait RewriteRule[IE <: Expr, OE <: SameAs[IE]] extends RewriteRuleFor[IE] { type OutExpr = OE }
+  // One rewrite rule defines one step of rewriting
+  class RewriteRule[IE <: Expr, OE <: SameAs[IE]](rule: IE => OE) extends Rewrite[IE, OE] {
 
-  // Recursive rewrite of some expression
-  trait AnyRecRewrite extends AnyRewrite
-  trait RecRewriteOf[IE <: Expr] extends AnyRecRewrite { type InExpr = IE }
-  trait RecRewrite[IE <: Expr, OE <: SameAs[IE]] extends RecRewriteOf[IE] { type OutExpr = OE }
-  trait IdRecRewrite[IE <: Expr] extends RecRewrite[IE, IE]
-
-  object AnyRewrite extends AnyStrategyStrategy {
-
-    // This implicit is in another trait to make its priority higher
-    implicit def recRewrite[
-      E <: Expr,
-      Rule <: RewriteRuleFor[E],
-      Rec <: RecRewriteOf[Rule#OutExpr]
-    ](implicit
-      rule: Rule,
-      rec: Rec
-    ):  RecRewrite[E, Rec#OutExpr] =
-    new RecRewrite[E, Rec#OutExpr] {
-
-      def apply(expr: InExpr): OutExpr = rec(rule(expr))
-    }
+     def apply(expr: InExpr): OutExpr = rule(expr)
   }
 
-  trait AnyStrategyStrategy {
+  case class IdRule[E <: Expr]() extends RewriteRule[E, E](identity[E])
+
+
+  // Rewrite strategy is just a set of rewrite rules prioritised by the traits hierarchy
+  trait AnyRewriteStrategy {
 
     // This is the fallback case for recursive rewriting
-    implicit def idRewrite[E <: Expr]:
-        IdRecRewrite[E] =
-    new IdRecRewrite[E] { def apply(expr: InExpr): OutExpr = expr }
+    implicit def idRewrite[E <: Expr]: IdRule[E] = IdRule[E]()
   }
 
-
   // This method looks for an implicit rewriting strategy and applies it
-  def rewrite[IE <: Expr, OE <: SameAs[IE]](e: IE)
-    (implicit rewr: RecRewriteOf[IE] { type OutExpr = OE }): OE = rewr(e)
+  def rewrite[IE <: Expr, ME <: SameAs[IE]](e: IE)
+    (implicit rule: RewriteRule[IE, ME], rec: RewriteOf[ME]): rec.OutExpr = rec(rule(e))
 
 }

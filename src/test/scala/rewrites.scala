@@ -1,10 +1,10 @@
 package ohnosequences.test
 
-import ohnosequences.gadt._
+import ohnosequences.expr._
 import ohnosequences.rewrites._
 
 class RewriteTest extends org.scalatest.FunSuite {
-  import ohnosequences.rules._
+  import ohnosequences.exprRewrites._
 
     val boo = BoolVar('boo)
 
@@ -19,10 +19,9 @@ class RewriteTest extends org.scalatest.FunSuite {
   }
 
   test("rewriting double negation recursively") {
-    import AnyRewrite._
+
     assert{ rewrite(neg4) == boo }
-    // assert{ rewrite(neg4)(recRewrite(doubleNegation, recRewrite(doubleNegation, idRewrite[BoolVar]))) == boo }
-    // println(doubleNegation(neg4))
+    assert{ rewrite(Not(Not(neg4))) == boo }
   }
 
   // test("rewriting if-then-else") {

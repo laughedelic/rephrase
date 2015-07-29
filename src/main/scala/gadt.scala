@@ -1,7 +1,7 @@
 package ohnosequences
 
 // Here we define our DSL
-case object gadt {
+case object expr {
 
   sealed trait Expr { type Repr }
 
@@ -29,22 +29,22 @@ case object gadt {
 }
 
 
+import rewrites._
+
 // Here are some rewriting rules, which can be applied just once (no recursion here)
-case object rules { //extends rewrites.RecursiveStrategy {
-  import gadt._
-  import rewrites._
+case object exprRewrites extends AnyRewriteStrategy {
+  import expr._
 
-  implicit def doubleNegation[E <: BoolExpr]:
-      RewriteRule[Not[Not[E]], E] =
-  new RewriteRule[Not[Not[E]], E] {
+  implicit def doubleNegation[E <: BoolExpr, Rec <: RewriteOf[E]](implicit rec: Rec):
+      RewriteRule[Not[Not[E]], Rec#OutExpr] =
+  new RewriteRule[Not[Not[E]], Rec#OutExpr]( expr => rec(expr.inside.inside) )
 
-    def apply(expr: InExpr): OutExpr = expr.inside.inside
-  }
-
-  implicit def switchCondition[C <: BoolExpr, T <: IntExpr, E <: IntExpr]:
-      RewriteRule[IntIte[Not[C], T, E], IntIte[C, E, T]] =
-  new RewriteRule[IntIte[Not[C], T, E], IntIte[C, E, T]] {
-
-    def apply(expr: InExpr): OutExpr = IntIte(expr.cond.inside, expr.elseExpr, expr.thenExpr)
-  }
+  // implicit def switchCondition[
+  //   C <: BoolExpr, T <: IntExpr, E <: IntExpr,
+  //   Rec <: RewriteOf[IntIte[C, E, T]]
+  // ](implicit rec: Rec):
+  //     RewriteRule[IntIte[Not[C], T, E], Rec#OutExpr] =
+  // new RewriteRule[IntIte[Not[C], T, E], Rec#OutExpr](
+  //   expr => rec(IntIte(expr.cond.inside, expr.elseExpr, expr.thenExpr))
+  // )
 }
