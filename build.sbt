@@ -6,4 +6,7 @@ description   := "rephrase project"
 
 bucketSuffix  := "era7.com"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.2" % Test
+libraryDependencies ++= Seq(
+  "ohnosequences" %% "cosas" % "0.8.0-SNAPSHOT",
+  "org.scalatest" %% "scalatest" % "2.2.2" % Test
+)

@@ -1,36 +1,47 @@
 package ohnosequences.test
 
 import ohnosequences.expr._
-import ohnosequences.rewrites._
+import ohnosequences.rewriting._
+import ohnosequences.strategies._
+import ohnosequences.cosas._, fns._
 
 class RewriteTest extends org.scalatest.FunSuite {
-  import ohnosequences.exprRewrites._
 
-    val boo = BoolVar('boo)
+  val boo = BoolVar('boo)
 
-    val neg2 = Not(Not(boo))
-    val neg3 = Not(neg2)
-    val neg4 = Not(neg3)
+  val neg2 = Not(Not(boo))
+  val neg3 = Not(neg2)
+  val neg4 = Not(neg3)
 
   test("rewriting double negation") {
 
-    assert{ rewrite(neg2) == boo }
-    assert{ rewrite(neg3) == Not(boo) }
+    assert{ doubleNegation(neg2) == boo }
+    assert{ doubleNegation(neg3) == Not(boo) }
   }
 
+  // NOTE: this is handled by the doubleNegation.eliminate rule
   test("rewriting double negation recursively") {
 
-    assert{ rewrite(neg4) == boo }
-    assert{ rewrite(Not(Not(neg4))) == boo }
+    assert{ doubleNegation(neg4) == boo }
+    assert{ doubleNegation(Not(Not(neg4))) == boo }
   }
 
-  test("rewriting if-then-else") {
+  // NOTE: this is handled by the rule from RewritesConjunction trait
+  test("rewriting double negation inside of a conjunction") {
 
-    val c = BoolVar('c)
-    val t = IntVar('t)
-    val f = IntVar('f)
+    assert{ doubleNegation(And(neg2, neg3)) == And(boo, Not(boo)) }
 
-    val ite = IntIte(Not(c), t, f)
-    assert{ rewrite(ite) == IntIte(c, f, t) }
+    assertResult(And(boo, And(boo, Not(boo)))){
+      doubleNegation(
+        Not(Not(
+          And(
+            neg2,
+            And(neg4, neg3)
+          )
+        ))
+      )
+    }
+
   }
+
 }
